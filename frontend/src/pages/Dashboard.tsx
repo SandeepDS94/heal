@@ -3,27 +3,33 @@ import { Users, Activity, FileText, Search, LogOut, Download } from 'lucide-reac
 
 const Dashboard = () => {
     const [reports, setReports] = useState<any[]>([]);
+    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
-        fetchReports();
-    }, []);
-
-    const fetchReports = async () => {
-        try {
+        const fetchData = async () => {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8000/reports', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setReports(data);
+            if (!token) return;
+
+            try {
+                // Fetch Reports
+                const reportsRes = await fetch('http://localhost:8000/reports', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (reportsRes.ok) setReports(await reportsRes.json());
+
+                // Fetch User
+                const userRes = await fetch('http://localhost:8000/users/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (userRes.ok) setUser(await userRes.json());
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
             }
-        } catch (error) {
-            console.error('Error fetching reports:', error);
-        }
-    };
+        };
+
+        fetchData();
+    }, []);
 
     const handleDownload = async (reportId: string) => {
         try {
@@ -67,7 +73,7 @@ const Dashboard = () => {
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-white">Saved Reports</h1>
-                        <p className="text-gray-400">Welcome back, Dr. Smith</p>
+                        <p className="text-gray-400">Welcome back, {user ? (user.full_name || user.username) : 'User'}</p>
                     </div>
                     <div className="flex items-center space-x-4">
 

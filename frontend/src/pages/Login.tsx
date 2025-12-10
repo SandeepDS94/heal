@@ -65,7 +65,7 @@ const Login = () => {
 
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-2">Username</label>
+                        <label className="block text-sm font-medium text-gray-400 mb-2">Email or Username</label>
                         <div className="relative">
                             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                             <input

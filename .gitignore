@@ -6,7 +6,15 @@ __pycache__/
 venv/
 env/
 
+
 # Node
 dist/
 build/
+node_modules/
 .DS_Store
+
+# Debug/Temp
+debug_output.txt
+fix_env.py
+test_auth.py
+.env

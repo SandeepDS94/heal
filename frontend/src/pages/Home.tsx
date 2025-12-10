@@ -1,9 +1,34 @@
-
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Clock, Brain } from 'lucide-react';
+import { ArrowRight, Shield, Clock, Brain, Calendar, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Home = () => {
+
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const headers = { 'Authorization': `Bearer ${token}` };
+
+                // Fetch User
+                const userRes = await fetch('http://localhost:8000/users/me', { headers });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    setUser(userData);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     return (
         <div className="flex flex-col">
             {/* Hero Section */}
@@ -17,6 +42,15 @@ const Home = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
+                        {user && (
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-xl md:text-2xl text-accent mb-4 font-medium"
+                            >
+                                Welcome back, {user.full_name || user.username}
+                            </motion.p>
+                        )}
                         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-gray-400 bg-clip-text text-transparent">
                             AI-Powered Orthopedic <br /> Diagnostics
                         </h1>

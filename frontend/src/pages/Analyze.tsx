@@ -56,12 +56,22 @@ const Analyze = () => {
                 ctx?.drawImage(img, 0, 0);
 
                 // Draw damage location if available
+                // Draw damage location if available
                 if (result?.damage_location) {
                     const { x, y, width, height } = result.damage_location;
                     if (ctx) {
                         ctx.strokeStyle = 'red';
                         ctx.lineWidth = 5;
-                        ctx.strokeRect(x, y, width, height);
+                        // Handle normalized coordinates (0-1)
+                        // If values are already > 1 (legacy support/safety), treat as pixels
+                        const isNormalized = x <= 1 && y <= 1 && width <= 1 && height <= 1;
+
+                        const drawX = isNormalized ? x * canvas.width : x;
+                        const drawY = isNormalized ? y * canvas.height : y;
+                        const drawW = isNormalized ? width * canvas.width : width;
+                        const drawH = isNormalized ? height * canvas.height : height;
+
+                        ctx.strokeRect(drawX, drawY, drawW, drawH);
                     }
                 }
             };

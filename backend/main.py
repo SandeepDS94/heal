@@ -41,17 +41,17 @@ async def startup_db_client():
         await db.command("ping")
         print("Successfully connected to MongoDB!")
         
-        # Seed default admin user
-        existing_admin = await db.users.find_one({"username": "admin"})
-        if not existing_admin:
-            hashed_password = get_password_hash("admin")
-            admin_user = {
-                "username": "admin",
-                "full_name": "System Admin",
-                "hashed_password": hashed_password
-            }
-            await db.users.insert_one(admin_user)
-            print("Default admin user created (admin/admin)")
+        # Admin user seeding removed as per requirement
+        # existing_admin = await db.users.find_one({"username": "admin"})
+        # if not existing_admin:
+        #     hashed_password = get_password_hash("admin")
+        #     admin_user = {
+        #         "username": "admin",
+        #         "full_name": "System Admin",
+        #         "hashed_password": hashed_password
+        #     }
+        #     await db.users.insert_one(admin_user)
+        #     print("Default admin user created (admin/admin)")
             
     except Exception as e:
         print(f"Failed to connect to MongoDB: {e}")
@@ -94,6 +94,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.get("/users/me", response_model=User)
+async def read_users_me(current_user: UserInDB = Depends(get_current_user)):
+    return current_user
+
 @app.post("/analyze")
 async def analyze_image(file: UploadFile = File(...), current_user: UserInDB = Depends(get_current_user)):
     contents = await file.read()
@@ -120,7 +124,7 @@ async def analyze_image(file: UploadFile = File(...), current_user: UserInDB = D
         - notes: A concise summary of the findings (max 2 sentences).
         - detailed_analysis: A detailed technical explanation of the visual findings, including specific bone structures affected.
         - recommendations: A list of 3-5 recommended next steps or treatments.
-        - damage_location: An object with x, y, width, height (all in pixels, assuming 224x224 image size) representing the bounding box of the primary issue. If no issue or unsure, return null.
+        - damage_location: An object with x, y, width, height (all as floats between 0.0 and 1.0 representing percentage of image dimensions) representing the bounding box of the primary issue. If no issue or unsure, return null.
         """
         
         print("DEBUG: Sending request to Gemini...")
@@ -135,7 +139,7 @@ async def analyze_image(file: UploadFile = File(...), current_user: UserInDB = D
         # Ensure damage_location has valid values if present
         if not result.get('damage_location'):
              # Fallback for damage location if model doesn't return it
-             result['damage_location'] = {"x": 50, "y": 50, "width": 100, "height": 100}
+             result['damage_location'] = {"x": 0.2, "y": 0.2, "width": 0.4, "height": 0.4}
 
         return result
 
@@ -154,7 +158,7 @@ async def analyze_image(file: UploadFile = File(...), current_user: UserInDB = D
             "notes": f"Detected signs of {prediction.lower()} in the provided scan. Recommended further consultation. (Mock Analysis - API Error)",
             "detailed_analysis": "Mock detailed analysis: The scan shows potential irregularities in the bone structure. Further investigation is required to confirm the diagnosis.",
             "recommendations": ["Consult an orthopedic specialist", "Schedule an MRI for better visualization", "Rest and immobilize the affected area"],
-            "damage_location": {"x": 50, "y": 50, "width": 100, "height": 100}
+            "damage_location": {"x": 0.3, "y": 0.3, "width": 0.2, "height": 0.2}
         }
 
 @app.post("/report")
@@ -297,6 +301,9 @@ async def get_reports(current_user: UserInDB = Depends(get_current_user)):
         report["id"] = str(report["_id"])
         del report["_id"]
     return reports
+
+
+
 
 @app.get("/reports/{report_id}/download")
 async def download_report(report_id: str, current_user: UserInDB = Depends(get_current_user)):

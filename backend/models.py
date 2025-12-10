@@ -38,3 +38,5 @@ class Report(ReportBase):
     id: str
     created_at: datetime
     doctor_id: str
+
+

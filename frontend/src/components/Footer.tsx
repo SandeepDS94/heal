@@ -55,7 +55,7 @@ const Footer = () => {
 
                 <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
                     <p className="text-gray-500 text-sm">
-                        © 2024 OrthoAI. All rights reserved.
+                        © 2025 OrthoAI. All rights reserved.
                     </p>
                     <div className="flex space-x-4 mt-4 md:mt-0">
                         <a href="#" className="text-gray-400 hover:text-white transition-colors"><Github className="h-5 w-5" /></a>

@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Analyze from './pages/Analyze';
 import Dashboard from './pages/Dashboard';
+import FractureDetectionPage from './pages/FractureDetectionPage';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -41,6 +42,13 @@ function App() {
           <ProtectedRoute>
             <Layout>
               <Dashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/fracture-detection" element={
+          <ProtectedRoute>
+            <Layout>
+              <FractureDetectionPage />
             </Layout>
           </ProtectedRoute>
         } />

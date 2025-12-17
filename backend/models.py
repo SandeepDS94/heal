@@ -30,6 +30,8 @@ class ReportBase(BaseModel):
     notes: str
     image_url: Optional[str] = None
     annotations: Optional[str] = None # JSON string of annotations
+    damage_location: Optional[dict] = None # JSON object for x, y, width, height
+    doctor_name: Optional[str] = None # Override doctor name for report
 
 class ReportCreate(ReportBase):
     pass

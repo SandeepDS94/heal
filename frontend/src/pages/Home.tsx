@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Shield, Clock, Brain, Calendar, User } from 'lucide-react';
+import { ArrowRight, Shield, Clock, Brain } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Home = () => {

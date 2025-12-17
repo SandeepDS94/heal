@@ -5,10 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Analyze = () => {
     const [file, setFile] = useState<File | null>(null);
     const [patientId, setPatientId] = useState('');
+    const [doctorName, setDoctorName] = useState('');
     const [preview, setPreview] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [result, setResult] = useState<any>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Fetch user info for doctor name
+    useEffect(() => {
+        const fetchUser = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const res = await fetch('http://localhost:8000/users/me', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const user = await res.json();
+                        setDoctorName(user.full_name || user.username);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch user", e);
+                }
+            }
+        };
+        fetchUser();
+    }, []);
 
     // Annotation state
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,7 +78,6 @@ const Analyze = () => {
                 ctx?.drawImage(img, 0, 0);
 
                 // Draw damage location if available
-                // Draw damage location if available
                 if (result?.damage_location) {
                     const { x, y, width, height } = result.damage_location;
                     if (ctx) {
@@ -71,7 +92,16 @@ const Analyze = () => {
                         const drawW = isNormalized ? width * canvas.width : width;
                         const drawH = isNormalized ? height * canvas.height : height;
 
-                        ctx.strokeRect(drawX, drawY, drawW, drawH);
+                        // ctx.strokeRect(drawX, drawY, drawW, drawH);
+                        // Draw Circle instead of Ellipse
+                        ctx.beginPath();
+                        // Use max dimension to ensure it covers the area, and keep the 1.2x scaling
+                        const maxDim = Math.max(drawW, drawH);
+                        const radius = (maxDim / 2) * 1.2;
+
+                        // circle(x, y, radius, startAngle, endAngle)
+                        ctx.arc(drawX + drawW / 2, drawY + drawH / 2, radius, 0, 2 * Math.PI);
+                        ctx.stroke();
                     }
                 }
             };
@@ -152,15 +182,36 @@ const Analyze = () => {
 
     const handleDownloadReport = async () => {
         if (!file || !result) return;
+
+        let fileToSend = file;
+        let isAnnotated = false;
+
+        // Use canvas blob if available (annotated view)
+        if (canvasRef.current) {
+            try {
+                const blob = await new Promise<Blob | null>(resolve => canvasRef.current?.toBlob(resolve, 'image/png'));
+                if (blob) {
+                    fileToSend = new File([blob], "annotated_image.png", { type: 'image/png' });
+                    isAnnotated = true;
+                }
+            } catch (e) {
+                console.error("Failed to get canvas blob", e);
+            }
+        }
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToSend);
         formData.append('patient_id', patientId || 'Anonymous');
+        formData.append('doctor_name', doctorName);
         formData.append('disorder', result.disorder);
         formData.append('confidence', result.confidence.toString());
         formData.append('severity', result.severity);
         formData.append('notes', result.notes);
+        formData.append('is_annotated_image', isAnnotated.toString());
+
         if (result.detailed_analysis) formData.append('detailed_analysis', result.detailed_analysis);
         if (result.recommendations) formData.append('recommendations', JSON.stringify(result.recommendations));
+        if (result.damage_location) formData.append('damage_location', JSON.stringify(result.damage_location));
 
         try {
             const token = localStorage.getItem('token');
@@ -190,15 +241,36 @@ const Analyze = () => {
 
     const handleSaveReport = async () => {
         if (!file || !result) return;
+
+        let fileToSend = file;
+        let isAnnotated = false;
+
+        // Use canvas blob if available (annotated view)
+        if (canvasRef.current) {
+            try {
+                const blob = await new Promise<Blob | null>(resolve => canvasRef.current?.toBlob(resolve, 'image/png'));
+                if (blob) {
+                    fileToSend = new File([blob], "annotated_image.png", { type: 'image/png' });
+                    isAnnotated = true;
+                }
+            } catch (e) {
+                console.error("Failed to get canvas blob", e);
+            }
+        }
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToSend);
         formData.append('patient_id', patientId || 'Anonymous');
+        formData.append('doctor_name', doctorName);
         formData.append('disorder', result.disorder);
         formData.append('confidence', result.confidence.toString());
         formData.append('severity', result.severity);
         formData.append('notes', result.notes);
+        formData.append('is_annotated_image', isAnnotated.toString());
+
         if (result.detailed_analysis) formData.append('detailed_analysis', result.detailed_analysis);
         if (result.recommendations) formData.append('recommendations', JSON.stringify(result.recommendations));
+        if (result.damage_location) formData.append('damage_location', JSON.stringify(result.damage_location));
 
         try {
             const token = localStorage.getItem('token');
@@ -233,15 +305,27 @@ const Analyze = () => {
                     {/* Upload & Annotation Section */}
                     <div className="space-y-6">
                         <div className="bg-secondary/50 p-8 rounded-2xl border border-white/10">
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-400 mb-2">Patient ID</label>
-                                <input
-                                    type="text"
-                                    value={patientId}
-                                    onChange={(e) => setPatientId(e.target.value)}
-                                    placeholder="Enter Patient ID"
-                                    className="w-full bg-primary border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors"
-                                />
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Patient ID</label>
+                                    <input
+                                        type="text"
+                                        value={patientId}
+                                        onChange={(e) => setPatientId(e.target.value)}
+                                        placeholder="Enter Patient ID"
+                                        className="w-full bg-primary border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Doctor Name</label>
+                                    <input
+                                        type="text"
+                                        value={doctorName}
+                                        onChange={(e) => setDoctorName(e.target.value)}
+                                        placeholder="Enter Doctor Name"
+                                        className="w-full bg-primary border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors"
+                                    />
+                                </div>
                             </div>
 
                             <div

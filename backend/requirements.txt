@@ -12,3 +12,4 @@ passlib[bcrypt]
 reportlab
 google-generativeai
 python-dotenv
+ultralytics
